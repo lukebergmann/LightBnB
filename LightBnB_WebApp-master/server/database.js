@@ -60,7 +60,7 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser = function (user) {
- return pool.query(`INSERT INTO users (name, email, password)
+  return pool.query(`INSERT INTO users (name, email, password)
 VALUES($1, $2, $3)
 RETURNING *;
 `, [user.name, user.email, user.password])
@@ -88,10 +88,10 @@ const getAllReservations = function (guest_id, limit = 10) {
     GROUP BY properties.id, reservations.id
     ORDER BY reservations.start_date
     LIMIT $2`, [guest_id, limit])
-    .then (res => {
-     return res.rows
+    .then(res => {
+      return res.rows
     })
-} 
+}
 
 // TODO: limit the reservations to the guest_id.
 // TODO: pass in guest_id to params 
@@ -106,7 +106,7 @@ exports.getAllReservations = getAllReservations;
  * @param {*} limit The number of results to return.
  * @return {Promise<[{}]>}  A promise to the properties.
  */
- const getAllProperties = function(options, limit = 10) {
+const getAllProperties = function (options, limit = 10) {
   // 1
   const queryParams = [];
   // 2
@@ -133,7 +133,7 @@ exports.getAllReservations = getAllReservations;
     queryParams.push(parseInt(options.maximum_price_per_night));
     queryString += `AND cost_per_night <= $${queryParams.length}`;
   }
-  
+
   // 4
   queryString += `GROUP BY properties.id `;
   if (options.minimum_rating) {
@@ -141,7 +141,7 @@ exports.getAllReservations = getAllReservations;
     queryString += `HAVING avg(rating) >= $${queryParams.length}`;
   }
   queryParams.push(limit);
-  queryString +=  `ORDER BY cost_per_night
+  queryString += `ORDER BY cost_per_night
   LIMIT $${queryParams.length};
 `;
 
@@ -150,7 +150,7 @@ exports.getAllReservations = getAllReservations;
 
   // 6
   return pool.query(queryString, queryParams)
-  .then(res => res.rows);
+    .then(res => res.rows);
 }
 
 exports.getAllProperties = getAllProperties
@@ -162,9 +162,29 @@ exports.getAllProperties = getAllProperties
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  return pool.query(
+    `INSERT INTO properties (
+      owner_id,
+      title,
+      description,
+      thumbnail_photo_url,
+      cover_photo_url,
+      cost_per_night,
+      street,
+      city,
+      province,
+      post_code,
+      country,
+      parking_spaces,
+      number_of_bathrooms,
+      number_of_bedrooms
+    )
+    VALUES (
+      '${property.owner_id}', '${property.title}', '${property.description}', '${property.thumbnail_photo_url}', '${property.cover_photo_url}', '${property.cost_per_night}', '${property.street}', '${property.city}', '${property.province}', '${property.post_code}', '${property.country}', '${property.parking_spaces}', '${property.number_of_bathrooms}', '${property.number_of_bedrooms}')
+    RETURNING *;
+    `)
+    .then(res => {
+      return res.rows
+    })
 }
 exports.addProperty = addProperty;
